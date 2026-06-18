@@ -1,0 +1,5 @@
+1- Logo Font
+2- Video in Hero Section
+3- proof section header will change 
+4- last logo in proof section have to be bigger
+ 
