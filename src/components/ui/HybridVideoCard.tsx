@@ -22,7 +22,8 @@ type HybridVideoCardProps = {
   /** Path to the video file (relative to /public). Thumbnail is `videoSrc.replace('.mp4','.jpg')`. */
   videoSrc: string;
   className?: string;
-  /** When true, hover (desktop) unmutes; mobile shows a tap-to-unmute toggle. */
+  /** When true, shows a click/tap-to-unmute toggle. Audio NEVER starts on
+   *  hover or focus — only on an explicit click (WCAG 1.4.2). */
   enableAudio?: boolean;
   /** How the video starts on touch devices. Currently only 'inview' is wired. */
   mobilePlayMode?: "inview" | "tap";
@@ -35,9 +36,9 @@ type HybridVideoCardProps = {
  * Card that shows a still thumbnail at rest and plays a muted video on
  * hover (desktop) or when scrolled into the viewport (touch devices).
  *
- * `enableAudio`: desktop hover unmutes; mobile gets a Volume2/VolumeX
- * toggle so the user can turn audio on after autoplay starts (browsers
- * block unmuted autoplay until interaction).
+ * `enableAudio`: renders a Volume2/VolumeX toggle. Audio is off by default
+ * and only turns on when the user explicitly clicks that toggle — never on
+ * hover or focus (WCAG 1.4.2, Audio Control).
  *
  * Honors `prefers-reduced-motion` by never autoplaying.
  */
@@ -127,14 +128,14 @@ export function HybridVideoCard({
     if (reducedMotion) return;
     const v = videoRef.current;
     if (!v) return;
-    if (enableAudio) setIsMuted(false);
+    // Play muted only — audio is opt-in via the toggle, never on hover/focus.
     v.play()
       .then(() => {
         setIsPlaying(true);
         trackPlay();
       })
       .catch(() => {});
-  }, [reducedMotion, enableAudio, trackPlay]);
+  }, [reducedMotion, trackPlay]);
 
   const handleLeave = useCallback(() => {
     if (reducedMotion) return;
@@ -199,7 +200,7 @@ export function HybridVideoCard({
           type="button"
           onClick={toggleMute}
           aria-label={isMuted ? "Unmute video" : "Mute video"}
-          title={isMuted ? "Hover to hear" : "Mute"}
+          title={isMuted ? "Play with sound" : "Mute"}
           className="absolute right-4 top-4 z-30 flex items-center gap-1.5 rounded-full border border-white/20 bg-canvas/80 px-3 py-2 text-ink shadow-lg shadow-black/30 backdrop-blur-md transition-all hover:scale-105 hover:border-white/40 hover:bg-canvas/90 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/30"
         >
           {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}

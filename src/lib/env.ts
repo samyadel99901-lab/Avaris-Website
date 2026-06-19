@@ -29,8 +29,8 @@ const supabaseSecretKey = z
 /**
  * Validated environment variables.
  *
- * Phase 2 vars: Supabase, tracking, admin auth (up to 5 admins).
- * Phase 3 vars: Monday API token, board IDs, cron secret.
+ * Supabase, tracking, admin auth (up to 5 admins), contact email (Resend).
+ * (Monday / PayPal / cron vars moved out with the automation app.)
  *
  * Admin _1 is required so we always have one valid login. _2..5 are
  * optional. To skip env validation in CI/build steps that don't need
@@ -78,40 +78,7 @@ export const env = createEnv({
     ADMIN_PASSWORD_HASH_5: z.string().startsWith("$argon2").optional(),
     ADMIN_ROLE_5: adminRole.optional(),
 
-    // ── Monday.com sync (Phase 3) ─────────────────────────────────
-    // Personal API token. Required for any sync to run; optional at
-    // build time so deploys without sync configured don't fail.
-    MONDAY_API_TOKEN: z.string().min(20).optional(),
-    // Defaults match the AVARIS production boards. Override per-env if
-    // you ever need to point at a staging board.
-    MONDAY_BOARD_CLIENTS_ID: z
-      .string()
-      .regex(/^\d+$/)
-      .default("6589322272"),
-    MONDAY_BOARD_PROJECTS_ID: z
-      .string()
-      .regex(/^\d+$/)
-      .default("6589241558"),
-
-    // Shared secret — Vercel Cron sends it as Authorization: Bearer …
-    // Required in production (the cron endpoint triggers a full sync, so it
-    // must fail closed — no deploy with an open door). Optional in dev/test
-    // so local runs don't need a value.
-    CRON_SECRET:
-      process.env.NODE_ENV === "production"
-        ? z.string().min(16)
-        : z.string().min(16).optional(),
-
-    // ── PayPal invoicing automation ───────────────────────────────
-    // REST API v2 (Invoicing). Optional at build time so deploys
-    // without the automation configured don't fail — the PayPal client
-    // throws at call-time if these are missing. Start in sandbox; flip
-    // PAYPAL_MODE to "live" only after sign-off.
-    PAYPAL_CLIENT_ID: z.string().min(1).optional(),
-    PAYPAL_CLIENT_SECRET: z.string().min(1).optional(),
-    PAYPAL_MODE: z.enum(["sandbox", "live"]).default("sandbox"),
-
-    // ── Contact + project-request email (Resend) ──────────────────
+    // ── Contact email (Resend) ────────────────────────────────────
     // Optional in all envs: missing key → API routes log the submission
     // to the server console and return success. Set in production to
     // actually deliver mail.
@@ -156,13 +123,6 @@ export const env = createEnv({
     ADMIN_NAME_5: process.env.ADMIN_NAME_5,
     ADMIN_PASSWORD_HASH_5: process.env.ADMIN_PASSWORD_HASH_5,
     ADMIN_ROLE_5: process.env.ADMIN_ROLE_5,
-    MONDAY_API_TOKEN: process.env.MONDAY_API_TOKEN,
-    MONDAY_BOARD_CLIENTS_ID: process.env.MONDAY_BOARD_CLIENTS_ID,
-    MONDAY_BOARD_PROJECTS_ID: process.env.MONDAY_BOARD_PROJECTS_ID,
-    CRON_SECRET: process.env.CRON_SECRET,
-    PAYPAL_CLIENT_ID: process.env.PAYPAL_CLIENT_ID,
-    PAYPAL_CLIENT_SECRET: process.env.PAYPAL_CLIENT_SECRET,
-    PAYPAL_MODE: process.env.PAYPAL_MODE,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     CONTACT_EMAIL_FROM: process.env.CONTACT_EMAIL_FROM,
     CONTACT_EMAIL_TO: process.env.CONTACT_EMAIL_TO,

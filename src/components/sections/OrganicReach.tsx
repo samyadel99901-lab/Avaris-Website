@@ -25,7 +25,11 @@ const AUTO_ADVANCE_MS = 5000;
 export function OrganicReach() {
   const reducedMotion = useReducedMotion();
   const [activeIndex, setActiveIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
+  // Separate hover / focus pauses so leaving the mouse doesn't resume while
+  // keyboard focus is still inside the carousel.
+  const [hoverPaused, setHoverPaused] = useState(false);
+  const [focusPaused, setFocusPaused] = useState(false);
+  const paused = hoverPaused || focusPaused;
   const [progressKey, setProgressKey] = useState(0);
 
   // Auto-advance every 5s, pause on hover/focus, respect reduced motion.
@@ -56,12 +60,20 @@ export function OrganicReach() {
     <Section id="organic-reach" flush className="py-20 lg:py-24">
       <Container>
         <div
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-          onFocus={() => setPaused(true)}
-          onBlur={() => setPaused(false)}
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Organic reach insights"
+          onMouseEnter={() => setHoverPaused(true)}
+          onMouseLeave={() => setHoverPaused(false)}
+          onFocus={() => setFocusPaused(true)}
+          onBlur={() => setFocusPaused(false)}
           className="grid grid-cols-1 gap-12 md:grid-cols-12 md:gap-8"
         >
+          {/* Screen-reader announcement of the current insight */}
+          <div className="sr-only" aria-live="polite" aria-atomic="true">
+            {`Insight ${activeIndex + 1} of ${INSIGHTS.length}: ${active.label}`}
+          </div>
+
           {/* LEFT — title + thumbnails */}
           <div className="md:col-span-6 lg:col-span-5">
             <motion.h2

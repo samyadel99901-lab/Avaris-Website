@@ -80,9 +80,8 @@ export default function AdminPanelError({
                       project.
                     </li>
                     <li>
-                      If the project was deleted, create a new one, run the{" "}
-                      <code className="text-ink">supabase/migrations</code>, and
-                      re-sync Monday.
+                      If the project was deleted, create a new one and run the{" "}
+                      <code className="text-ink">supabase/migrations</code>.
                     </li>
                   </ul>
                 </>

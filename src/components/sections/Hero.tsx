@@ -47,16 +47,20 @@ export function Hero() {
       as="header"
       className="group relative min-h-screen overflow-hidden bg-canvas"
     >
-      {/* Poster image — visible until the video first paints, and the
-          permanent backdrop when reduced-motion is honored. */}
-      <Image
-        src="/hero.jpg"
-        alt="AVARIS Media Production studio"
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover object-center"
-      />
+      {/* When reduced-motion is honored there's no video, so the still is
+          the permanent backdrop. When motion is allowed the <video poster>
+          already covers first-paint — rendering this <Image> too would just
+          double-load hero.jpg and hurt LCP, so we skip it. */}
+      {reducedMotion && (
+        <Image
+          src="/hero.jpg"
+          alt="AVARIS Media Production studio"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
+        />
+      )}
 
       {/* Background video — covers the viewport, no audio. */}
       {!reducedMotion && (

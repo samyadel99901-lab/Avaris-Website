@@ -2,14 +2,13 @@ import type { MetadataRoute } from "next";
 
 const SITE_URL = "https://www.avarisco.net";
 
+// Must match the actual section `id`s rendered on the landing page.
 const SECTION_ANCHORS = [
-  "where-we-started",
   "the-proof",
   "services-overview",
-  "video-production",
+  "video-editing",
   "vfx-3d",
   "photoshoot",
-  "our-process",
   "organic-reach",
   "testimonials",
   "final-cta",

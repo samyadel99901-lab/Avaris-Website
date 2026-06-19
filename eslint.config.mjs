@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The standalone automation app is its own project (own tsconfig +
+    // node_modules) — the main project must not lint/compile it.
+    "automation-standalone/**",
   ]),
 ]);
 

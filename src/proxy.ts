@@ -20,9 +20,9 @@ import {
  *
  * Admin gate:
  *   /admin/login  + no session     → continue
- *   /admin/login  + valid session  → 302 /admin/overview
+ *   /admin/login  + valid session  → 302 /admin/analytics
  *   /admin/*      + no session     → 302 /admin/login?next=…
- *   /admin        + valid session  → 302 /admin/overview
+ *   /admin        + valid session  → 302 /admin/analytics
  *
  * All other static headers (HSTS, X-Frame-Options, Referrer-Policy,
  * Permissions-Policy, etc.) live in next.config.ts.
@@ -75,7 +75,7 @@ export function proxy(request: NextRequest) {
     }
     if (session && (isLoginPage || pathname === "/admin")) {
       const url = request.nextUrl.clone();
-      url.pathname = "/admin/overview";
+      url.pathname = "/admin/analytics";
       url.search = "";
       return NextResponse.redirect(url);
     }

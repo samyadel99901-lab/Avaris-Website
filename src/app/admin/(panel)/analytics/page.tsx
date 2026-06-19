@@ -1,13 +1,21 @@
+import { Eye } from "lucide-react";
 import { Card, CardHeader } from "@/components/admin/ui/Card";
 import { ScrollDepthChart } from "@/components/admin/analytics/ScrollDepthChart";
 import { TrafficSourcesPie } from "@/components/admin/analytics/TrafficSourcesPie";
+import { RecentActivityFeed } from "@/components/admin/overview/RecentActivityFeed";
+import { StatsCard } from "@/components/admin/overview/StatsCard";
 import { VisitorsLineChart } from "@/components/admin/overview/VisitorsLineChart";
+import { env } from "@/lib/env";
 import { getAnalyticsService } from "@/services/admin";
 
 export const metadata = { title: "Analytics" };
 
 const num = new Intl.NumberFormat("en-US");
 const pct = (v: number) => `${v}%`;
+
+// Only flag sample data when actually running on the mock source.
+const dataSourceNote =
+  env.ADMIN_DATA_SOURCE === "supabase" ? "" : " · sample data";
 
 export default async function AnalyticsPage() {
   const s = await getAnalyticsService().getSnapshot();
@@ -19,9 +27,19 @@ export default async function AnalyticsPage() {
           Analytics
         </h1>
         <p className="mt-1 font-body text-sm text-ink-muted">
-          Visitor behaviour on the landing page · last 30 days · mock data.
+          {`Visitor behaviour on the landing page · last 30 days${dataSourceNote}.`}
         </p>
       </header>
+
+      {/* Visitors KPI (moved from the old Overview page) */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatsCard
+          label="Visitors (30d)"
+          value={num.format(s.totalVisitorsLast30d)}
+          hint="last 30 days"
+          icon={Eye}
+        />
+      </div>
 
       {/* Page views trend (full width) */}
       <Card>
@@ -164,6 +182,15 @@ export default async function AnalyticsPage() {
           </ul>
         </Card>
       </div>
+
+      {/* Recent activity (moved from the old Overview page) */}
+      <Card>
+        <CardHeader
+          title="Recent activity"
+          description="Latest 10 events from the landing page"
+        />
+        <RecentActivityFeed events={s.recentEvents} />
+      </Card>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { Suspense } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { SmoothScroll } from "@/components/layout/SmoothScroll";
+import { ConsentBanner } from "@/components/tracking/ConsentBanner";
 import { TrackingProvider } from "@/components/tracking/TrackingProvider";
 
 /**
@@ -58,6 +59,7 @@ export default async function LandingLayout({
           <TrackingProvider>{children}</TrackingProvider>
         </Suspense>
       </SmoothScroll>
+      <ConsentBanner />
     </>
   );
 }

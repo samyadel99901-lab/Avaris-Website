@@ -1,10 +1,8 @@
 import { redirect } from "next/navigation";
 import { Card, CardHeader } from "@/components/admin/ui/Card";
 import { Badge } from "@/components/admin/ui/Badge";
-import { SyncStatusCard } from "@/components/admin/sync/SyncStatusCard";
 import { getServerSession } from "@/lib/admin/session";
 import { getAuthService } from "@/services/admin";
-import { getLastSyncRun } from "@/services/monday/sync/runner";
 
 export const metadata = { title: "Settings" };
 
@@ -14,15 +12,6 @@ export default async function SettingsPage() {
 
   const admin = await getAuthService().getAdmin(session.adminId);
   if (!admin) redirect("/admin/login");
-
-  // Sync status — best-effort: don't break the page if Supabase isn't
-  // configured (mock mode).
-  let lastRun = null;
-  try {
-    lastRun = await getLastSyncRun();
-  } catch {
-    /* no Supabase configured — show empty state */
-  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -64,11 +53,6 @@ export default async function SettingsPage() {
           />
         </dl>
       </Card>
-
-      <SyncStatusCard
-        initialLastRun={lastRun}
-        isSuperAdmin={admin.role === "super_admin"}
-      />
 
       <Card>
         <CardHeader title="Coming next" description="Phase 2b" />

@@ -33,6 +33,10 @@ export function ProjectFormDialog({
         src={MONDAY_FORM_SRC}
         title="Submit a new project"
         loading="lazy"
+        // Constrain the third-party frame's capabilities and avoid leaking
+        // the full landing URL (incl. any ?utm_*) to monday in the Referer.
+        sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
+        referrerPolicy="strict-origin-when-cross-origin"
         className="h-[72vh] max-h-[680px] w-full rounded-lg border-0 bg-white"
       />
     </DialogShell>

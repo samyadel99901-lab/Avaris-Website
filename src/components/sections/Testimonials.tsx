@@ -8,7 +8,12 @@ import {
   Star,
 } from "lucide-react";
 import { FaInstagram } from "react-icons/fa";
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import { Container } from "@/components/ui/Container";
 import { Section } from "@/components/ui/Section";
 import { SectionTitle } from "@/components/ui/SectionTitle";
@@ -93,7 +98,11 @@ function modOffset(i: number, active: number, total: number) {
 export function Testimonials() {
   const reducedMotion = useReducedMotion();
   const [activeIndex, setActiveIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
+  // Track hover and focus pauses separately — a single flag lets onMouseLeave
+  // resume auto-advance while the keyboard focus is still inside.
+  const [hoverPaused, setHoverPaused] = useState(false);
+  const [focusPaused, setFocusPaused] = useState(false);
+  const paused = hoverPaused || focusPaused;
 
   const total = TESTIMONIALS.length;
 
@@ -111,18 +120,38 @@ export function Testimonials() {
     return () => window.clearTimeout(id);
   }, [activeIndex, paused, reducedMotion, next]);
 
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      prev();
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      next();
+    }
+  };
+
   return (
     <Section id="testimonials">
       <Container>
         <SectionTitle title="What They Say" subtitle="Feedbacks" />
 
         <div
-          className="relative mt-16"
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-          onFocus={() => setPaused(true)}
-          onBlur={() => setPaused(false)}
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Client testimonials"
+          tabIndex={0}
+          className="relative mt-16 rounded-card-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/30"
+          onMouseEnter={() => setHoverPaused(true)}
+          onMouseLeave={() => setHoverPaused(false)}
+          onFocus={() => setFocusPaused(true)}
+          onBlur={() => setFocusPaused(false)}
+          onKeyDown={onKeyDown}
         >
+          {/* Screen-reader announcement of the current slide */}
+          <div className="sr-only" aria-live="polite" aria-atomic="true">
+            {`Testimonial ${activeIndex + 1} of ${total}: ${TESTIMONIALS[activeIndex].name}`}
+          </div>
+
           {/* Carousel viewport */}
           <div className="relative h-[440px] overflow-hidden sm:h-[400px]">
             {TESTIMONIALS.map((t, i) => {

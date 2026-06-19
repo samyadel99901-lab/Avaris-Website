@@ -1,28 +1,17 @@
 "use client";
 
-import {
-  Activity,
-  BarChart3,
-  Briefcase,
-  LayoutDashboard,
-  ReceiptText,
-  Settings,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { Activity, Settings, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 type NavItem = { href: string; label: string; icon: LucideIcon };
 
+// Monday-sourced sections (Reports / Clients / Projects / Automation) moved
+// out to automation-standalone/, and Overview was merged into Analytics. This
+// deployed dashboard keeps only the site's own visitor analytics.
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/admin/overview",  label: "Overview",  icon: LayoutDashboard },
   { href: "/admin/analytics", label: "Analytics", icon: Activity },
-  { href: "/admin/reports",   label: "Reports",   icon: BarChart3 },
-  { href: "/admin/clients",   label: "Clients",   icon: Users },
-  { href: "/admin/projects",  label: "Projects",  icon: Briefcase },
-  { href: "/admin/automation", label: "Automation", icon: ReceiptText },
   { href: "/admin/settings",  label: "Settings",  icon: Settings },
 ];
 

@@ -9,7 +9,6 @@
     "lint": "eslint",
     "generate-thumbnails": "node scripts/generate-thumbnails.mjs",
     "hash-password": "node scripts/hash-password.mjs",
-    "sync:monday:initial": "tsx scripts/initial-sync.ts",
     "prebuild": "npm run generate-thumbnails"
   },
   "dependencies": {

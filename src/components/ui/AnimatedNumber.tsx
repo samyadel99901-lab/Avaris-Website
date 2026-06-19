@@ -40,11 +40,17 @@ export function AnimatedNumber({
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "-10%" });
   const reducedMotion = useReducedMotion();
-  const motionValue = useMotionValue(reducedMotion ? value : 0);
+  const motionValue = useMotionValue(0);
   const display = useTransform(motionValue, (latest) => format(latest));
 
   useEffect(() => {
-    if (inView && !reducedMotion) {
+    // Reduced-motion (or it resolving to true after first paint): jump
+    // straight to the final value instead of leaving a stuck "0".
+    if (reducedMotion) {
+      motionValue.set(value);
+      return;
+    }
+    if (inView) {
       const controls = animate(motionValue, value, {
         duration,
         ease: "easeOut",

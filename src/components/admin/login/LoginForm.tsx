@@ -10,7 +10,17 @@ import { Input } from "@/components/admin/ui/Input";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/admin/overview";
+  // Only honor a same-origin internal path. Reject absolute / protocol-
+  // relative URLs ("https://evil.com", "//evil.com") to avoid an open
+  // redirect off-site after login.
+  const rawNext = searchParams.get("next");
+  const next =
+    rawNext &&
+    rawNext.startsWith("/") &&
+    !rawNext.startsWith("//") &&
+    !rawNext.includes("://")
+      ? rawNext
+      : "/admin/analytics";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

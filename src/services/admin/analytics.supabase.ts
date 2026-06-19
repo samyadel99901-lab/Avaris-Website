@@ -33,18 +33,20 @@ export function createSupabaseAnalyticsService(): AnalyticsService {
       const supabase = getServiceRoleClient();
       const since = daysAgoISO(WINDOW_DAYS);
 
-      // Pull all events in one fetch — usually < 50K rows for a small
-      // site. Bail early if empty so all downstream code can assume
-      // arrays are non-empty.
+      // Pull all events in the window via bounded pagination — PostgREST
+      // caps each response at db-max-rows (1000), so a single .select()
+      // would silently truncate and every aggregate below would be wrong.
+      // We page until exhausted (or hit a safety cap), ordered newest-first
+      // so a cap keeps the most relevant rows.
       //
       // The await is wrapped because supabase-js THROWS (not returns an
       // error object) when the underlying fetch can't reach Supabase at
       // all ("TypeError: fetch failed" — project paused, wrong URL, no
       // network). A dead Supabase shouldn't take down the whole admin
       // dashboard, so we degrade to an empty snapshot.
-      let result: Awaited<ReturnType<typeof runQuery>>;
+      let result: Awaited<ReturnType<typeof fetchAllEvents>>;
       try {
-        result = await runQuery(supabase, since);
+        result = await fetchAllEvents(supabase, since);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         console.warn(
@@ -110,7 +112,7 @@ export function createSupabaseAnalyticsService(): AnalyticsService {
         pageViewsTrend,
         videoMetrics: videoMetrics.slice(0, 10),
         topCtas: buildTopCtas(ctaClicks).slice(0, 5),
-        scrollDepth: buildScrollDepth(scrollEvents),
+        scrollDepth: buildScrollDepth(scrollEvents, uniqueSessions.size),
         trafficSources: buildTrafficSources(pageViews),
         devices: buildDevices(events),
         topReferrers: buildTopReferrers(events).slice(0, 5),
@@ -129,6 +131,7 @@ interface EventRow {
   event_type: RecentEventType;
   event_data: Record<string, unknown>;
   referrer: string | null;
+  utm_source: string | null;
   user_agent: string | null;
   viewport_width: number | null;
   path: string;
@@ -271,36 +274,38 @@ function buildTopCtas(events: EventRow[]): CtaMetrics[] {
     .sort((a, b) => b.count - a.count);
 }
 
-function buildScrollDepth(events: EventRow[]): ScrollDepthDistribution[] {
-  type B = { sectionId: string; label: string; reached: Set<string>; total: Set<string> };
-  const m = new Map<string, B>();
-  // Count unique sessions that reached each section.
+const SCROLL_THRESHOLDS = [25, 50, 75, 100] as const;
+
+// The scroll listener emits one `scroll_depth` event per milestone reached
+// ({ percent: 25|50|75|100 }) — no sectionId. So the distribution is keyed
+// on those depth milestones: for each, the share of visitor sessions that
+// reached it. `totalSessions` is the all-visitor denominator.
+function buildScrollDepth(
+  events: EventRow[],
+  totalSessions: number,
+): ScrollDepthDistribution[] {
+  const reached = new Map<number, Set<string>>(
+    SCROLL_THRESHOLDS.map((t) => [t, new Set<string>()]),
+  );
   for (const e of events) {
-    const sectionId = stringField(e.event_data, "sectionId");
-    if (!sectionId) continue;
-    const label = stringField(e.event_data, "label") ?? sectionId;
-    const b = m.get(sectionId) ?? {
-      sectionId,
-      label,
-      reached: new Set<string>(),
-      total: new Set<string>(),
-    };
-    b.reached.add(e.session_id);
-    m.set(sectionId, b);
+    const pct = numberField(e.event_data, "percent");
+    if (pct === null) continue;
+    for (const t of SCROLL_THRESHOLDS) {
+      if (pct >= t) reached.get(t)!.add(e.session_id);
+    }
   }
-  // Use total page-view sessions as the denominator.
-  const totalSessions = new Set(events.map((e) => e.session_id)).size || 1;
-  return Array.from(m.values()).map<ScrollDepthDistribution>((b) => ({
-    sectionId: b.sectionId,
-    label: b.label,
-    reachedPct: Math.round((b.reached.size / totalSessions) * 100),
+  const denom = totalSessions || 1;
+  return SCROLL_THRESHOLDS.map<ScrollDepthDistribution>((t) => ({
+    sectionId: String(t),
+    label: `Scrolled ${t}%`,
+    reachedPct: Math.round(((reached.get(t)?.size ?? 0) / denom) * 100),
   }));
 }
 
 function buildTrafficSources(pageViews: EventRow[]): TrafficSource[] {
   const buckets: Record<string, number> = {};
   for (const e of pageViews) {
-    const utm = stringField(e.event_data, "utm_source");
+    const utm = e.utm_source;
     if (utm) {
       buckets[utm] = (buckets[utm] ?? 0) + 1;
       continue;
@@ -438,13 +443,47 @@ function daysAgoISO(days: number): string {
   return new Date(Date.now() - days * 86_400_000).toISOString();
 }
 
-/** The events query, extracted so its result type can be reused above. */
-function runQuery(supabase: SupabaseClient, since: string) {
-  return supabase
-    .from("events")
-    .select(
-      "id,created_at,session_id,event_type,event_data,referrer,user_agent,viewport_width,path",
-    )
-    .gte("created_at", since)
-    .order("created_at", { ascending: false });
+const PAGE_SIZE = 1000; // PostgREST db-max-rows cap per response
+const MAX_PAGES = 60; // safety cap → 60k rows (header notes "usually < 50K")
+
+/**
+ * Fetch every event in the window, paging past PostgREST's 1000-row cap.
+ *
+ * Returns the same `{ data, error }` shape the old single-query helper did,
+ * so the caller's missing-table / connectivity handling is unchanged. On a
+ * PostgREST error it surfaces that error (with whatever rows were collected
+ * so far). Ordered newest-first with an `id` tiebreak for a stable total
+ * order across page boundaries; if the safety cap is reached we keep the
+ * most recent rows and warn (a signal to move aggregation into Postgres).
+ */
+async function fetchAllEvents(
+  supabase: SupabaseClient,
+  since: string,
+): Promise<{
+  data: EventRow[];
+  error: { message?: string; code?: string } | null;
+}> {
+  const all: EventRow[] = [];
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const from = page * PAGE_SIZE;
+    const { data, error } = await supabase
+      .from("events")
+      .select(
+        "id,created_at,session_id,event_type,event_data,referrer,utm_source,user_agent,viewport_width,path",
+      )
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) return { data: all, error };
+    const rows = (data ?? []) as EventRow[];
+    all.push(...rows);
+    if (rows.length < PAGE_SIZE) return { data: all, error: null }; // last page
+  }
+  console.warn(
+    `[analytics] reached MAX_PAGES (${MAX_PAGES * PAGE_SIZE} rows) — older ` +
+      "events truncated this window. Consider moving aggregation to Postgres.",
+  );
+  return { data: all, error: null };
 }

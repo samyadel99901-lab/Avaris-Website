@@ -10,7 +10,7 @@ export function Sidebar() {
   return (
     <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-white/10 bg-canvas lg:flex">
       <Link
-        href="/admin/overview"
+        href="/admin/analytics"
         className="flex items-center gap-2 border-b border-white/10 px-5 py-4"
       >
         <Image

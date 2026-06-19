@@ -43,11 +43,10 @@ export async function POST(request: Request): Promise<Response> {
     const json = await request.json();
     body = contactSchema.parse(json);
   } catch (err) {
+    // Log the validation detail server-side only — never echo it to clients.
+    console.warn("[contact] invalid submission:", err);
     return NextResponse.json(
-      {
-        error: "Please fill in your name, a valid email, and a longer message.",
-        details: err instanceof Error ? err.message : String(err),
-      },
+      { error: "Please fill in your name, a valid email, and a longer message." },
       { status: 400 },
     );
   }

@@ -48,11 +48,14 @@ export function RecentActivityFeed({ events }: { events: RecentEvent[] }) {
   return (
     <ul className="divide-y divide-white/5">
       {events.map((e) => {
-        const Icon = icons[e.eventType];
+        // Fall back for any event_type outside the known set (e.g. a legacy
+        // row) so an unknown type can't crash the whole Analytics page.
+        const Icon = icons[e.eventType] ?? Eye;
+        const tone = tones[e.eventType] ?? "text-ink-muted bg-white/5";
         return (
           <li key={e.id} className="flex items-center gap-3 px-5 py-3">
             <span
-              className={`grid h-8 w-8 shrink-0 place-items-center rounded-md ${tones[e.eventType]}`}
+              className={`grid h-8 w-8 shrink-0 place-items-center rounded-md ${tone}`}
             >
               <Icon size={14} strokeWidth={1.75} />
             </span>
