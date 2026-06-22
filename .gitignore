@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# heavy video sources — kept on disk, hosted on Cloudflare R2 later, NOT pushed.
+# Only the .mp4s are ignored; the .jpg posters/thumbnails in the same folders
+# stay tracked (the cards need them).
+/public/**/*.mp4
