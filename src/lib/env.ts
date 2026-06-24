@@ -94,6 +94,9 @@ export const env = createEnv({
     NEXT_PUBLIC_TRACKING_ENABLED: z
       .enum(["true", "false"])
       .default("false"),
+    // Public base URL for video assets (Cloudflare R2). Empty → serve from
+    // /public locally. When set, must be a valid URL.
+    NEXT_PUBLIC_VIDEO_BASE_URL: z.string().url().optional(),
   },
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
@@ -102,6 +105,7 @@ export const env = createEnv({
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     ADMIN_DATA_SOURCE: process.env.ADMIN_DATA_SOURCE,
     NEXT_PUBLIC_TRACKING_ENABLED: process.env.NEXT_PUBLIC_TRACKING_ENABLED,
+    NEXT_PUBLIC_VIDEO_BASE_URL: process.env.NEXT_PUBLIC_VIDEO_BASE_URL,
     SESSION_SECRET: process.env.SESSION_SECRET,
     ADMIN_EMAIL_1: process.env.ADMIN_EMAIL_1,
     ADMIN_NAME_1: process.env.ADMIN_NAME_1,

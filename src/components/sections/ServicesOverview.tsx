@@ -1,7 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useLenis } from "lenis/react";
 import Image from "next/image";
+import { type MouseEvent } from "react";
 import { Container } from "@/components/ui/Container";
 import { Section } from "@/components/ui/Section";
 import { fadeUp, staggerChildren } from "@/lib/animations";
@@ -40,6 +42,18 @@ const SERVICES = [
  * by design — no accent color (see feedback_accent_gradient memory).
  */
 export function ServicesOverview() {
+  const lenis = useLenis();
+
+  // Native #anchor clicks fight Lenis's virtual scroll (needs two clicks).
+  // Drive the scroll through Lenis like the Navbar does — single click.
+  const scrollToAnchor = (anchor: string, e: MouseEvent<HTMLAnchorElement>) => {
+    const target = document.getElementById(anchor);
+    if (!target) return;
+    e.preventDefault();
+    if (lenis) lenis.scrollTo(target, { offset: -72 });
+    else target.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <Section id="services-overview">
       <Container>
@@ -55,6 +69,7 @@ export function ServicesOverview() {
               key={service.number}
               variants={fadeUp}
               href={`#${service.anchor}`}
+              onClick={(e) => scrollToAnchor(service.anchor, e)}
               className="group relative block aspect-[3/4] overflow-hidden rounded-card-lg bg-elevated"
             >
               {/* Image */}

@@ -21,6 +21,9 @@ export function DialogShell({
   children,
   /** Wider dialogs (project request) opt in via `wide`. */
   wide,
+  /** Explicit max-width class — overrides `wide`/default (e.g. the video
+   *  lightbox passes a larger one). */
+  maxWidthClassName,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -28,6 +31,7 @@ export function DialogShell({
   description?: string;
   children: ReactNode;
   wide?: boolean;
+  maxWidthClassName?: string;
 }) {
   const lenis = useLenis();
 
@@ -54,7 +58,7 @@ export function DialogShell({
           className={cn(
             "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
             "max-h-[92vh] w-[92vw] overflow-y-auto",
-            wide ? "max-w-2xl" : "max-w-md",
+            maxWidthClassName ?? (wide ? "max-w-2xl" : "max-w-md"),
             "rounded-2xl border border-white/15 bg-canvas/95 p-6 shadow-2xl shadow-black/60 backdrop-blur-xl sm:p-8",
             "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95",
           )}

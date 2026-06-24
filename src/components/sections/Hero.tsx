@@ -8,6 +8,7 @@ import { ContactDialog } from "@/components/forms/ContactDialog";
 import { ProjectFormDialog } from "@/components/forms/ProjectFormDialog";
 import { Container } from "@/components/ui/Container";
 import { Section } from "@/components/ui/Section";
+import { videoUrl } from "@/lib/media";
 
 const cinematicEase = [0.16, 1, 0.3, 1] as const;
 
@@ -66,7 +67,7 @@ export function Hero() {
       {!reducedMotion && (
         <video
           ref={videoRef}
-          src="/video-production/website%20cover.mp4"
+          src={videoUrl("/video-production/website cover.mp4")}
           poster="/hero.jpg"
           autoPlay
           muted

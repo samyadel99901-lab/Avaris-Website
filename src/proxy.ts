@@ -4,6 +4,18 @@ import {
   verifySession,
 } from "@/lib/admin/auth-cookie";
 
+// R2 video bucket origin, derived from NEXT_PUBLIC_VIDEO_BASE_URL. Added to
+// the CSP media-src so <video> can load from R2. Empty when unset (videos
+// served locally from /public → 'self' already covers them). Computed once.
+const R2_MEDIA_ORIGIN = (() => {
+  try {
+    const raw = process.env.NEXT_PUBLIC_VIDEO_BASE_URL;
+    return raw ? new URL(raw).origin : "";
+  } catch {
+    return "";
+  }
+})();
+
 // Next.js 16: proxy.ts always runs on the Node.js runtime — no
 // runtime export allowed. `Buffer` and `node:crypto` work natively.
 
@@ -105,7 +117,7 @@ export function proxy(request: NextRequest) {
     `img-src 'self' data: blob:`,
     `font-src 'self' data:`,
     `connect-src ${connectSrc}`,
-    `media-src 'self' blob:`,
+    `media-src 'self' blob:${R2_MEDIA_ORIGIN ? ` ${R2_MEDIA_ORIGIN}` : ""}`,
     // The "Submit a new project" dialog embeds a monday.com WorkForm.
     `frame-src 'self' https://*.monday.com`,
     `frame-ancestors 'none'`,

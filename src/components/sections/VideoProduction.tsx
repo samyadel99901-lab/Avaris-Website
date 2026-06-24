@@ -1,10 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useState } from "react";
 import { Container } from "@/components/ui/Container";
 import { HybridVideoCard } from "@/components/ui/HybridVideoCard";
 import { Section } from "@/components/ui/Section";
 import { SectionTitle } from "@/components/ui/SectionTitle";
+import {
+  VideoLightbox,
+  type LightboxVideo,
+} from "@/components/ui/VideoLightbox";
 import { fadeUp, staggerCards } from "@/lib/animations";
 
 /**
@@ -26,12 +31,14 @@ const LONG_FORM = [
     title: "Cinematic Edits",
     body: "Story-driven pacing and dramatic grades that make every frame iconic.",
     videoSrc: "/video-production/cinematic.mp4",
+    secondVideoSrc: "/video-production/cinematic2.mp4",
   },
   {
     num: "02",
     title: "Lifestyle Edits",
     body: "Human-centric cuts that sell the feeling, not just the space.",
     videoSrc: "/video-production/lifestyle.mp4",
+    secondVideoSrc: "/video-production/lifestyle2.mp4",
   },
 ] as const;
 
@@ -41,22 +48,48 @@ const SHORT_FORM = [
     title: "Trendy Edits",
     body: "High-retention short form built for maximum reach and engagement.",
     videoSrc: "/video-production/trendy.mp4",
+    secondVideoSrc: "/video-production/trendy2.mp4",
   },
   {
     num: "04",
     title: "Realtor Videos",
     body: "Agent intro reels and team videos that build authority and identity.",
     videoSrc: "/video-production/realtor.mp4",
+    secondVideoSrc: "/video-production/realtor2.mp4",
   },
   {
     num: "05",
     title: "Branding Videos",
     body: "Walkthroughs and listings transformed into premium visual experiences.",
     videoSrc: "/video-production/branding.mp4",
+    secondVideoSrc: "/video-production/branding2.mp4",
   },
 ] as const;
 
+type OpenCategory = {
+  title: string;
+  videos: LightboxVideo[];
+  ratio: "16:9" | "9:16";
+};
+
 export function VideoProduction() {
+  const [openCat, setOpenCat] = useState<OpenCategory | null>(null);
+
+  const openPair = (
+    title: string,
+    primary: string,
+    secondary: string,
+    ratio: "16:9" | "9:16",
+  ) =>
+    setOpenCat({
+      title,
+      ratio,
+      videos: [
+        { src: primary, label: "Version 1" },
+        { src: secondary, label: "Version 2" },
+      ],
+    });
+
   return (
     <Section id="video-editing">
       <Container>
@@ -87,6 +120,10 @@ export function VideoProduction() {
                   aspectClassName="aspect-video"
                   enableAudio
                   mobilePlayMode="inview"
+                  hasSecond
+                  onActivate={() =>
+                    openPair(sub.title, sub.videoSrc, sub.secondVideoSrc, "16:9")
+                  }
                 />
               </motion.div>
             ))}
@@ -118,11 +155,25 @@ export function VideoProduction() {
                   aspectClassName="aspect-[9/16]"
                   enableAudio
                   mobilePlayMode="inview"
+                  hasSecond
+                  onActivate={() =>
+                    openPair(sub.title, sub.videoSrc, sub.secondVideoSrc, "9:16")
+                  }
                 />
               </motion.div>
             ))}
           </div>
         </motion.div>
+
+        <VideoLightbox
+          open={openCat !== null}
+          onOpenChange={(o) => {
+            if (!o) setOpenCat(null);
+          }}
+          title={openCat?.title ?? ""}
+          videos={openCat?.videos ?? []}
+          ratio={openCat?.ratio ?? "16:9"}
+        />
       </Container>
     </Section>
   );

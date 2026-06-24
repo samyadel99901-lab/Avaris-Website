@@ -1,15 +1,18 @@
 "use client";
 
 import { useReducedMotion } from "framer-motion";
-import { Volume2, VolumeX } from "lucide-react";
+import { ChevronRight, Volume2, VolumeX } from "lucide-react";
 import Image from "next/image";
 import {
   useCallback,
   useEffect,
   useRef,
   useState,
+  type KeyboardEvent,
   type MouseEvent,
 } from "react";
+import { MediaPlaceholder } from "@/components/ui/MediaPlaceholder";
+import { videoUrl } from "@/lib/media";
 import { track } from "@/lib/tracking/tracker";
 import { cn } from "@/lib/utils";
 
@@ -22,23 +25,28 @@ type HybridVideoCardProps = {
   /** Path to the video file (relative to /public). Thumbnail is `videoSrc.replace('.mp4','.jpg')`. */
   videoSrc: string;
   className?: string;
-  /** When true, shows a click/tap-to-unmute toggle. Audio NEVER starts on
-   *  hover or focus — only on an explicit click (WCAG 1.4.2). */
+  /** When true, hover/focus plays with sound (subject to the browser's
+   *  autoplay policy) and a mute toggle is shown. */
   enableAudio?: boolean;
   /** How the video starts on touch devices. Currently only 'inview' is wired. */
   mobilePlayMode?: "inview" | "tap";
   /** Tailwind aspect class for the card. Default `aspect-[3/4]` (portrait poster).
    *  Override with `aspect-video` for landscape edits, `aspect-[9/16]` for reels. */
   aspectClassName?: string;
+  /** When provided, the card becomes clickable/keyboard-activatable (e.g. to
+   *  open a lightbox). The mute toggle stops propagation so it won't fire this. */
+  onActivate?: () => void;
+  /** When true, shows a "2 versions" hint badge on hover. */
+  hasSecond?: boolean;
 };
 
 /**
  * Card that shows a still thumbnail at rest and plays a muted video on
  * hover (desktop) or when scrolled into the viewport (touch devices).
  *
- * `enableAudio`: renders a Volume2/VolumeX toggle. Audio is off by default
- * and only turns on when the user explicitly clicks that toggle — never on
- * hover or focus (WCAG 1.4.2, Audio Control).
+ * `enableAudio`: hover/focus plays with sound (browsers permitting — unmuted
+ * playback needs a prior user interaction on the page) and a Volume2/VolumeX
+ * toggle is shown for manual control. Leaving the card re-mutes.
  *
  * Honors `prefers-reduced-motion` by never autoplaying.
  */
@@ -51,6 +59,8 @@ export function HybridVideoCard({
   enableAudio = false,
   mobilePlayMode = "inview",
   aspectClassName = "aspect-[3/4]",
+  onActivate,
+  hasSecond = false,
 }: HybridVideoCardProps) {
   const reducedMotion = useReducedMotion();
   const thumbnailSrc = videoSrc.replace(/\.mp4$/i, ".jpg");
@@ -60,6 +70,7 @@ export function HybridVideoCard({
   const firedMilestones = useRef<Set<number>>(new Set());
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [thumbError, setThumbError] = useState(false);
 
   // Apply mute state to the underlying <video> element whenever it changes.
   useEffect(() => {
@@ -128,14 +139,34 @@ export function HybridVideoCard({
     if (reducedMotion) return;
     const v = videoRef.current;
     if (!v) return;
-    // Play muted only — audio is opt-in via the toggle, never on hover/focus.
+    // Hover/focus plays with sound when the card opts into audio. Set the DOM
+    // property directly so this play() picks it up immediately (the state is
+    // just for the toggle UI).
+    if (enableAudio) {
+      v.muted = false;
+      setIsMuted(false);
+    }
     v.play()
       .then(() => {
         setIsPlaying(true);
         trackPlay();
       })
-      .catch(() => {});
-  }, [reducedMotion, trackPlay]);
+      .catch(() => {
+        // Browsers block unmuted autoplay until the user has interacted with
+        // the page at least once. Fall back to muted playback so the video
+        // still runs; the user can click the toggle for sound.
+        if (enableAudio && !v.muted) {
+          v.muted = true;
+          setIsMuted(true);
+          v.play()
+            .then(() => {
+              setIsPlaying(true);
+              trackPlay();
+            })
+            .catch(() => {});
+        }
+      });
+  }, [reducedMotion, enableAudio, trackPlay]);
 
   const handleLeave = useCallback(() => {
     if (reducedMotion) return;
@@ -160,28 +191,53 @@ export function HybridVideoCard({
       onMouseLeave={handleLeave}
       onFocus={handleEnter}
       onBlur={handleLeave}
+      onClick={onActivate}
+      onKeyDown={
+        onActivate
+          ? (e: KeyboardEvent<HTMLDivElement>) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onActivate();
+              }
+            }
+          : undefined
+      }
+      role={onActivate ? "button" : undefined}
+      tabIndex={onActivate ? 0 : undefined}
       className={cn(
         "group relative cursor-pointer overflow-hidden rounded-card-lg bg-elevated",
         aspectClassName,
         className,
       )}
     >
-      {/* Thumbnail — visible at rest */}
-      <Image
-        src={thumbnailSrc}
-        alt={title}
-        fill
-        sizes="(max-width: 768px) 100vw, 33vw"
-        className={cn(
-          "object-cover transition-opacity duration-300",
-          isPlaying ? "opacity-0" : "opacity-100",
-        )}
-      />
+      {/* Thumbnail — visible at rest. Falls back to a placeholder if the
+          .jpg is missing (safety net). */}
+      {thumbError ? (
+        <div className="absolute inset-0">
+          <MediaPlaceholder
+            label={title}
+            tone="dark"
+            className="h-full rounded-none border-0"
+          />
+        </div>
+      ) : (
+        <Image
+          src={thumbnailSrc}
+          alt={title}
+          fill
+          sizes="(max-width: 768px) 100vw, 33vw"
+          onError={() => setThumbError(true)}
+          className={cn(
+            "object-cover transition-opacity duration-300",
+            isPlaying ? "opacity-0" : "opacity-100",
+          )}
+        />
+      )}
 
       {/* Video — fades in on hover / scroll */}
       <video
         ref={videoRef}
-        src={videoSrc}
+        src={videoUrl(videoSrc)}
         muted
         loop
         playsInline
@@ -193,6 +249,17 @@ export function HybridVideoCard({
           isPlaying ? "opacity-100" : "opacity-0",
         )}
       />
+
+      {/* "Has a second version" hint — centered, solid for legibility,
+          fades in on hover. */}
+      {hasSecond && (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <span className="inline-flex items-center gap-2 rounded-full bg-paper px-5 py-2.5 font-body text-sm font-semibold uppercase tracking-wide text-ink-inverse shadow-xl shadow-black/40">
+            2 versions
+            <ChevronRight size={16} strokeWidth={2.5} />
+          </span>
+        </div>
+      )}
 
       {/* Audio toggle — top-right, only when audio is enabled */}
       {enableAudio && (
