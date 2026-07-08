@@ -1,6 +1,6 @@
 import { Analytics } from "@vercel/analytics/react";
 import type { Metadata, Viewport } from "next";
-import { Anton, Inter, Orbitron } from "next/font/google";
+import { Anton, Inter, Orbitron, Oswald } from "next/font/google";
 import "./globals.css";
 
 const anton = Anton({
@@ -20,6 +20,15 @@ const orbitron = Orbitron({
   subsets: ["latin"],
   weight: ["400", "500", "700", "900"],
   variable: "--font-orbitron",
+  display: "swap",
+});
+
+// Tall, condensed wordmark face with light weights — used for the navbar
+// AVARIS so it reads big but not heavy (Anton has no light weight).
+const oswald = Oswald({
+  subsets: ["latin"],
+  weight: ["300", "400"],
+  variable: "--font-oswald",
   display: "swap",
 });
 
@@ -95,7 +104,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${anton.variable} ${inter.variable} ${orbitron.variable}`}
+      className={`${anton.variable} ${inter.variable} ${orbitron.variable} ${oswald.variable}`}
     >
       {/* suppressHydrationWarning: browser extensions (Grammarly, etc.)
           inject attributes like data-gr-ext-installed onto <body> before

@@ -58,6 +58,7 @@
   --font-display: var(--font-anton);
   --font-body: var(--font-inter);
   --font-wordmark: var(--font-orbitron);
+  --font-nav: var(--font-oswald);
 }
 
 /* Signature gradient — emit as background-image utility. */

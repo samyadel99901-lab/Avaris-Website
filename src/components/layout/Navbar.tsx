@@ -119,7 +119,7 @@ export function Navbar() {
               priority
               className="h-7 w-7 object-contain"
             />
-            <span className="font-wordmark text-xs uppercase tracking-[0.3em] text-ink">
+            <span className="font-nav text-xl font-light uppercase tracking-[0.25em] text-ink">
               AVARIS
             </span>
           </a>
@@ -197,7 +197,7 @@ export function Navbar() {
                     height={28}
                     className="h-6 w-6 object-contain"
                   />
-                  <span className="font-wordmark text-xs uppercase tracking-[0.3em] text-ink">
+                  <span className="font-nav text-xl font-light uppercase tracking-[0.25em] text-ink">
                     AVARIS
                   </span>
                 </div>
