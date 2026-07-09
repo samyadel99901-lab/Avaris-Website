@@ -32,7 +32,7 @@ const oswald = Oswald({
   display: "swap",
 });
 
-const SITE_URL = "https://www.avarisco.net";
+const SITE_URL = "https://avarisco.net";
 const SITE_TITLE = "AVARIS | Premium Media Production";
 const SITE_DESCRIPTION =
   "AVARIS Media Production — cinematic video editing, VFX, 3D animation, and real estate photography for brands ready to tell their story at an international level.";

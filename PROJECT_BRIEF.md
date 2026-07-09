@@ -15,7 +15,7 @@
 
 **Contact info (from design):**
 - Email: `hello@avarisco.net`
-- Website: `www.avarisco.net`
+- Website: `avarisco.net`
 - Social: `@avariscorporation`
 
 ---
@@ -293,7 +293,7 @@ Each has 1-2 portrait video/image previews on the right side.
 - Subtitle: "Be the first in your market to tell your story at an international level."
 - Contact info:
   - EMAIL: hello@avarisco.net
-  - WEBSITE: www.avarisco.net
+  - WEBSITE: avarisco.net
   - SOCIAL: @avariscorporation
 - Right side: AVARIS logo (large) + "STORYTELLING IS EVERYTHING." + "EST. 2020"
 - Vertical divider line between left and right

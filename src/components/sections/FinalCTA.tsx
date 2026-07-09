@@ -14,7 +14,7 @@ const cinematicEase = [0.16, 1, 0.3, 1] as const;
 
 const CONTACT = [
   { label: "Email", value: "hello@avarisco.net", href: "mailto:hello@avarisco.net" },
-  { label: "Website", value: "www.avarisco.net", href: "https://www.avarisco.net" },
+  { label: "Website", value: "avarisco.net", href: "https://avarisco.net" },
   { label: "Social", value: "@avariscorporation", href: "https://www.instagram.com/avariscorporation" },
 ];
 

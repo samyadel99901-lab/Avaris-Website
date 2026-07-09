@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const SITE_URL = "https://www.avarisco.net";
+const SITE_URL = "https://avarisco.net";
 
 // Must match the actual section `id`s rendered on the landing page.
 const SECTION_ANCHORS = [

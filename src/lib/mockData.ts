@@ -104,7 +104,7 @@ const VIDEO_METRICS: VideoMetrics[] = [
 const TOP_CTAS: CtaMetrics[] = [
   { label: "Social: @avariscorporation", location: "final-cta", count: 412, uniqueClicks: 327 },
   { label: "Email: hello@avarisco.net", location: "final-cta", count: 268, uniqueClicks: 224 },
-  { label: "Website: www.avarisco.net", location: "final-cta", count: 134, uniqueClicks: 112 },
+  { label: "Website: avarisco.net", location: "final-cta", count: 134, uniqueClicks: 112 },
   { label: "Sound", location: "vfx-3d", count: 89, uniqueClicks: 76 },
   { label: "Sound", location: "video-production", count: 71, uniqueClicks: 58 },
 ];

@@ -3,14 +3,17 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight, ChevronDown, FileText } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { ContactDialog } from "@/components/forms/ContactDialog";
 import { ProjectFormDialog } from "@/components/forms/ProjectFormDialog";
 import { Container } from "@/components/ui/Container";
 import { Section } from "@/components/ui/Section";
-import { videoUrl } from "@/lib/media";
+import { posterUrl, streamId, streamIframeUrl } from "@/lib/stream-videos";
 
 const cinematicEase = [0.16, 1, 0.3, 1] as const;
+
+const HERO_VIDEO = "/video-production/website cover.mp4";
+const heroStreamId = streamId(HERO_VIDEO);
 
 /**
  * §6.1 — Full-viewport hero.
@@ -25,22 +28,20 @@ const cinematicEase = [0.16, 1, 0.3, 1] as const;
  * dialogs the FinalCTA used to, and a bouncing chevron at the bottom.
  */
 export function Hero() {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const reducedMotion = useReducedMotion();
   const [contactOpen, setContactOpen] = useState(false);
   const [projectOpen, setProjectOpen] = useState(false);
 
-  useEffect(() => {
-    if (reducedMotion) return;
-    const v = videoRef.current;
-    if (!v) return;
-    // Some browsers block autoplay until the element is attached + muted
-    // is set programmatically. Belt-and-suspenders.
-    v.muted = true;
-    v.play().catch(() => {
-      /* autoplay blocked — poster image stays visible, which is fine */
-    });
-  }, [reducedMotion]);
+  // Render the still on SSR + the first client render, then mount the Stream
+  // iframe only after hydration. Switching element type (img ↔ iframe) on the
+  // first render — as useReducedMotion() resolving true post-hydration would —
+  // trips a hydration mismatch. useSyncExternalStore gives a lint-safe mounted
+  // flag (no setState-in-effect).
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   return (
     <Section
@@ -48,11 +49,9 @@ export function Hero() {
       as="header"
       className="group relative min-h-screen overflow-hidden bg-canvas"
     >
-      {/* When reduced-motion is honored there's no video, so the still is
-          the permanent backdrop. When motion is allowed the <video poster>
-          already covers first-paint — rendering this <Image> too would just
-          double-load hero.jpg and hurt LCP, so we skip it. */}
-      {reducedMotion && (
+      {/* Before hydration, on reduced-motion, or with no Stream id → static
+          still. Otherwise the Cloudflare Stream background reel. */}
+      {!mounted || reducedMotion || !heroStreamId ? (
         <Image
           src="/hero.jpg"
           alt="AVARIS Media Production studio"
@@ -61,21 +60,24 @@ export function Hero() {
           sizes="100vw"
           className="object-cover object-center"
         />
-      )}
-
-      {/* Background video — covers the viewport, no audio. */}
-      {!reducedMotion && (
-        <video
-          ref={videoRef}
-          src={videoUrl("/video-production/website cover.mp4")}
-          poster="/hero.jpg"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
+      ) : (
+        <iframe
+          src={streamIframeUrl(heroStreamId, {
+            autoplay: true,
+            muted: true,
+            loop: true,
+            controls: false,
+            preload: "auto",
+            poster: posterUrl("/hero.jpg"),
+          })}
+          title="AVARIS background reel"
           aria-hidden
-          className="absolute inset-0 h-full w-full object-cover"
+          tabIndex={-1}
+          allow="autoplay; encrypted-media"
+          // iframes can't object-cover: size the 16:9 frame larger than the
+          // viewport and center it; the Section's overflow-hidden crops it to
+          // a full-bleed cover, like the old <video object-cover>.
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[56.25vw] min-h-screen w-screen min-w-[177.78vh] -translate-x-1/2 -translate-y-1/2 border-0"
         />
       )}
 

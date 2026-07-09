@@ -1,10 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Container } from "@/components/ui/Container";
-import { HybridVideoCard } from "@/components/ui/HybridVideoCard";
 import { Section } from "@/components/ui/Section";
+import {
+  VideoLightbox,
+  type LightboxVideo,
+} from "@/components/ui/VideoLightbox";
+import { VideoPosterCard } from "@/components/ui/VideoPosterCard";
 import { fadeUp, staggerChildren } from "@/lib/animations";
 
 const TAGS = [
@@ -31,6 +35,7 @@ const VIDEOS = [
     title: "Product CGI",
     wrapperClass: "w-full sm:w-auto sm:basis-0 sm:grow-[1.78]",
     aspectClass: "aspect-video w-full",
+    ratio: "16:9" as const,
   },
   {
     videoSrc: "/vfx/architectural-1.mp4",
@@ -38,6 +43,7 @@ const VIDEOS = [
     wrapperClass:
       "w-[65%] max-w-[17rem] sm:w-auto sm:max-w-none sm:basis-0 sm:grow-[0.5625]",
     aspectClass: "aspect-[9/16] w-full",
+    ratio: "9:16" as const,
   },
 ];
 
@@ -59,6 +65,12 @@ function Chip({ children }: { children: ReactNode }) {
  * math). They stack on mobile.
  */
 export function VFX3D() {
+  const [openVid, setOpenVid] = useState<{
+    title: string;
+    videos: LightboxVideo[];
+    ratio: "16:9" | "9:16";
+  } | null>(null);
+
   return (
     <Section id="vfx-3d" className="py-12 lg:py-20">
       <Container className="flex flex-col">
@@ -115,18 +127,33 @@ export function VFX3D() {
               variants={fadeUp}
               className={v.wrapperClass}
             >
-              <HybridVideoCard
+              <VideoPosterCard
                 number=""
                 title={v.title}
                 description=""
                 videoSrc={v.videoSrc}
-                enableAudio
-                mobilePlayMode="inview"
                 aspectClassName={v.aspectClass}
+                onActivate={() =>
+                  setOpenVid({
+                    title: v.title,
+                    videos: [{ src: v.videoSrc, label: v.title }],
+                    ratio: v.ratio,
+                  })
+                }
               />
             </motion.div>
           ))}
         </motion.div>
+
+        <VideoLightbox
+          open={openVid !== null}
+          onOpenChange={(o) => {
+            if (!o) setOpenVid(null);
+          }}
+          title={openVid?.title ?? ""}
+          videos={openVid?.videos ?? []}
+          ratio={openVid?.ratio ?? "16:9"}
+        />
       </Container>
     </Section>
   );

@@ -15,7 +15,7 @@ import { TrackingProvider } from "@/components/tracking/TrackingProvider";
  * a valid nonce under the strict CSP set in src/proxy.ts.
  */
 
-const SITE_URL = "https://www.avarisco.net";
+const SITE_URL = "https://avarisco.net";
 
 const jsonLd = {
   "@context": "https://schema.org",

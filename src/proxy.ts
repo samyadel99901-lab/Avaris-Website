@@ -16,6 +16,11 @@ const R2_MEDIA_ORIGIN = (() => {
   }
 })();
 
+// Cloudflare Stream: the player iframe (frame-src), video segments/manifests
+// (media-src + connect-src), and player thumbnails (img-src).
+const STREAM_HOSTS =
+  "https://customer-7fv8604cj73c3ujd.cloudflarestream.com https://*.cloudflarestream.com https://videodelivery.net";
+
 // Next.js 16: proxy.ts always runs on the Node.js runtime — no
 // runtime export allowed. `Buffer` and `node:crypto` work natively.
 
@@ -114,12 +119,13 @@ export function proxy(request: NextRequest) {
     // Framer Motion / Lenis set inline style attributes on elements;
     // 'unsafe-inline' is unavoidable for style-src in this stack.
     `style-src 'self' 'unsafe-inline'`,
-    `img-src 'self' data: blob:`,
+    `img-src 'self' data: blob: ${STREAM_HOSTS}`,
     `font-src 'self' data:`,
-    `connect-src ${connectSrc}`,
-    `media-src 'self' blob:${R2_MEDIA_ORIGIN ? ` ${R2_MEDIA_ORIGIN}` : ""}`,
-    // The "Submit a new project" dialog embeds a monday.com WorkForm.
-    `frame-src 'self' https://*.monday.com`,
+    `connect-src ${connectSrc} ${STREAM_HOSTS}`,
+    `media-src 'self' blob:${R2_MEDIA_ORIGIN ? ` ${R2_MEDIA_ORIGIN}` : ""} ${STREAM_HOSTS}`,
+    // "Submit a new project" embeds a monday.com WorkForm; video plays via a
+    // Cloudflare Stream iframe.
+    `frame-src 'self' https://*.monday.com ${STREAM_HOSTS}`,
     `frame-ancestors 'none'`,
     `form-action 'self'`,
     `base-uri 'self'`,

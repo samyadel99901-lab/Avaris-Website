@@ -1,9 +1,11 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
 import { useState, type KeyboardEvent } from "react";
 import { DialogShell } from "@/components/forms/DialogShell";
-import { videoUrl } from "@/lib/media";
+import { posterUrl, streamId, streamIframeUrl } from "@/lib/stream-videos";
+import { track } from "@/lib/tracking/tracker";
 import { cn } from "@/lib/utils";
 
 export type LightboxVideo = { src: string; label: string };
@@ -20,10 +22,11 @@ type VideoLightboxProps = {
 /**
  * Lightbox that shows a category's two video versions, switchable with
  * prev/next. Reuses DialogShell (Radix → focus-trap + Esc). The media box is
- * sized to the clip's aspect ratio (horizontal stays 16:9, vertical 9:16) and
- * the <video> uses object-contain, so nothing is ever stretched.
+ * sized to the clip's aspect ratio (horizontal 16:9, vertical 9:16); the
+ * Cloudflare Stream player fills it, so nothing is ever stretched.
  *
- * Videos load from R2 via videoUrl(); the local .jpg is used as the poster.
+ * Videos play from Cloudflare Stream (mapped via streamId); the local .jpg is
+ * the poster.
  */
 export function VideoLightbox({
   open,
@@ -44,7 +47,15 @@ export function VideoLightbox({
 
   const total = videos.length;
   const current = videos[index];
-  const go = (dir: number) => setIndex((i) => (i + dir + total) % total);
+  const id = current ? streamId(current.src) : undefined;
+
+  const go = (dir: number) => {
+    const next = (index + dir + total) % total;
+    // Track viewing the switched-to version. The primary version is tracked
+    // by the card when the lightbox first opens.
+    track({ type: "video_play", videoSrc: videos[next].src, videoLabel: title });
+    setIndex(next);
+  };
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (total < 2) return;
@@ -74,15 +85,32 @@ export function VideoLightbox({
                 : "aspect-[9/16] h-[78vh] max-h-[78vh] max-w-full",
             )}
           >
-            <video
-              key={index}
-              src={videoUrl(current.src)}
-              poster={current.src.replace(/\.mp4$/i, ".jpg")}
-              controls
-              autoPlay
-              playsInline
-              className="h-full w-full object-contain"
-            />
+            {/* Cloudflare Stream player. NOTE: granular video_progress
+                (25/50/75/100%) tracking used to come from the <video>
+                timeupdate; with the Stream iframe it would need the Cloudflare
+                Stream Player SDK (postMessage bridge), which we don't load here
+                to keep the strict CSP (no extra script-src) and avoid a new
+                dependency. `video_play` is tracked on open + on each switch. */}
+            {id ? (
+              <iframe
+                key={index}
+                src={streamIframeUrl(id, {
+                  autoplay: true,
+                  poster: posterUrl(current.src.replace(/\.mp4$/i, ".jpg")),
+                })}
+                title={title}
+                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                allowFullScreen
+                className="absolute inset-0 h-full w-full border-0"
+              />
+            ) : (
+              <Image
+                src={current.src.replace(/\.mp4$/i, ".jpg")}
+                alt={title}
+                fill
+                className="object-contain"
+              />
+            )}
 
             {total > 1 && (
               <>

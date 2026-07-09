@@ -3,13 +3,13 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Container } from "@/components/ui/Container";
-import { HybridVideoCard } from "@/components/ui/HybridVideoCard";
 import { Section } from "@/components/ui/Section";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import {
   VideoLightbox,
   type LightboxVideo,
 } from "@/components/ui/VideoLightbox";
+import { VideoPosterCard } from "@/components/ui/VideoPosterCard";
 import { fadeUp, staggerCards } from "@/lib/animations";
 
 /**
@@ -112,14 +112,12 @@ export function VideoProduction() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {LONG_FORM.map((sub) => (
               <motion.div key={sub.num} variants={fadeUp}>
-                <HybridVideoCard
+                <VideoPosterCard
                   number={sub.num}
                   title={sub.title}
                   description={sub.body}
                   videoSrc={sub.videoSrc}
                   aspectClassName="aspect-video"
-                  enableAudio
-                  mobilePlayMode="inview"
                   hasSecond
                   onActivate={() =>
                     openPair(sub.title, sub.videoSrc, sub.secondVideoSrc, "16:9")
@@ -147,14 +145,12 @@ export function VideoProduction() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
             {SHORT_FORM.map((sub) => (
               <motion.div key={sub.num} variants={fadeUp}>
-                <HybridVideoCard
+                <VideoPosterCard
                   number={sub.num}
                   title={sub.title}
                   description={sub.body}
                   videoSrc={sub.videoSrc}
                   aspectClassName="aspect-[9/16]"
-                  enableAudio
-                  mobilePlayMode="inview"
                   hasSecond
                   onActivate={() =>
                     openPair(sub.title, sub.videoSrc, sub.secondVideoSrc, "9:16")
